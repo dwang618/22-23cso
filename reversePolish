@@ -1,0 +1,186 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+
+//initial size of stack bc 24 is a pretty cool number
+int length=2400;
+//stack structure, array of integers used to store user inputs
+int* stack;
+//counter variable for location in the stack
+int pos = 0;
+//string used to formally store inputs using getline func
+char* input;
+//need a duplicate variable to manipulate so that original pointer can be freed at end
+char* copy;
+
+
+//stack needs to extend length, input goes beyond allocated memory; use realloc
+void resize() {
+	//extend size for fun
+	length*=length;
+	//repositioning of memory of extended list length to store more outputs
+	stack=realloc(stack, length*(sizeof(int)));
+}
+
+
+//in the case where operation "+","-","*","/" is used and there exist two prior values
+//action; replace stack @ curr pos-2 with operation between pos-2 and pos1 (in order)
+void pop(char* op) {
+	//add in ascii
+	if(*op == 43)  {
+		stack[pos-2] += stack[pos-1];
+	}
+
+	//subtract in ascii
+	if(*op == 45) {
+		stack[pos-2] -= stack[pos-1];
+	}
+
+	//multiply in ascii
+	if(*op == 42) {
+		stack[pos-2] *= stack[pos-1];
+	}
+
+	//mod in ascii
+	if(*op == 37) {
+		stack[pos-2] %= stack[pos-1];
+	}
+	//shift pointer back one
+	pos-=1;
+}
+
+
+//in the case where input reads as ints, push onto the stack and increment curr pos
+//action; place value at curr pos in stack and shift forward, use strtol func for int
+//check to see if stack array is full at current pos
+void push(char* op) {
+	//point to last character current
+	char *last;
+	//converts string into integer off of base 10 form
+	int value = strtol(op, &last, 10);
+	//if not able to be converted then return
+	if(*last != '\0') {
+		return;
+	}
+
+	//put value onto stack and increment pointer
+	stack[pos] = value;
+	pos+=1;
+
+	if(pos >= length) {
+		resize();
+	}
+}
+
+
+//return int value outputted by getline function taking in address, size, file src
+size_t readInput() {
+	char* input = NULL;
+	size_t bufsize = 0;
+	size_t numChar = getline(&input, &bufsize, stdin);
+	copy = input;
+	return numChar;
+}
+
+
+//display stack if applicable, free stack and original pointer, end main function
+void terminate() {
+	
+	free(input);
+	free(stack);
+}
+
+
+//print stack
+void printStack() {
+	printf("\n");
+	char format = '[';
+	for(int i=0; i<pos; i+=1) {
+		printf("%c", format);
+		printf(" %d", *(stack+i));
+		format=',';
+		}
+	printf(" ]\n");
+
+}
+
+
+
+
+//main fnctn; usage in order of operations using helper functions
+//initialize stack -> read input -> separate inputs -> terminate 
+int main() {
+	bool run = 1;
+	stack = malloc(length * sizeof(int));
+	while(run) {
+		size_t numChar = readInput();
+		//unable to read input	
+		if(numChar == -1) {
+			printStack();
+			terminate();
+			//printf("nothing there");
+			return 0;
+		}
+
+		//target an initial line indent
+		else if(*(copy+numChar-1) == '\n') {
+			*(copy+numChar-1) = '\0';
+			//printf("reformatted 1st part");
+		}
+		
+		else {
+			//printf("i give up");
+			printStack();
+			terminate();
+			return 0;
+		}
+
+		//begin splitting input
+		while(run) {
+			char* token = strsep(&copy, " ");
+			//token invalid or finished reading, wait for additional inputs
+			if(token == NULL) {
+				//printf("yo token is trash asl");
+				break;
+			}
+			//skip over white space
+			else if(strcmp(token, "") == 0) {
+				//printf("blanking hard asl rn");
+				continue;
+			}
+			//token can be converted to integer
+			else if(!strcmp(token, "+") || !strcmp(token, "-") || !strcmp(token, "*") || !strcmp(token, "%")) {
+			//token is not an integer
+				if(pos >=2) {
+					pop(token);
+					printStack();
+				}
+				else {
+					//printf("bruh u out of numbers lol");
+					terminate();
+					return 0;
+				}
+			}
+			else {
+				char *last;
+				int value = strtol(token, &last, 10);
+					if(*last != '\0') {
+						printStack();
+						terminate();
+					}
+				push(token);
+			}
+			
+			
+
+		}
+		
+	}
+
+	printStack();
+	terminate();
+	return 0;
+
+}
