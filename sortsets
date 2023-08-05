@@ -1,0 +1,190 @@
+package sorting;
+
+public class SortingAlgorithms {
+
+	/*
+	 * Swaps the elements and indices i and j in list
+	 * */
+	private static <T> void swap(T[] list, int i, int j) {
+		if (i < 0 || i >= list.length)
+			return;
+		if (j < 0 || j >= list.length)
+			return;
+		T temp = list[i];
+		list[i] = list[j];
+		list[j] = temp;
+	}
+	
+	// ####################
+	// ## INSERTION SORT ## ----------------------------------------------------------------------
+	// ####################
+	// ## IMPORTANT: the code we've given you below has a small bug!
+	// ##   You will need to look at this code and/or test, and fix the bug.
+	// ####################
+	/**
+	 * Usually a slow sorting algorithm. Insertion sort. 
+	 * @param list - An array of items
+	 */
+	public static <T extends Comparable<T>> void insertionSort(T[] list) {
+		for (int i = 1; i < list.length; i++) {
+			T val = list[i];
+			int j = i - 1;
+			while (j >= 0 && val.compareTo(list[j]) < 0) {
+				list[j+1] = list[j];
+				j--;
+			}
+			list[j+1] = val;
+		}
+	}
+	
+	
+	// ################
+	// ## MERGE SORT ## ----------------------------------------------------------------------
+	// ################	
+	/**
+	 * Recursive Merge sort and associated helper method.
+	 * The second method below provides the portion of the array
+	 * (i.e., index i to j inclusive) that we want to sort.
+	 * 
+	 * @param list - An array of items
+	 */
+	public static<T extends Comparable<T>> void mergeSort(T[] list) {
+		mergeSort(list, 0, list.length - 1);
+	}
+	public static<T extends Comparable<T>> void mergeSort(T[] list, int i, int j) {
+		//TODO: write the body of this method
+		if(i - j > 0) {
+			return; 
+		}
+		
+		if(i<j) {
+			int mid = (i+j)/2;
+			mergeSort(list, i, mid);
+			mergeSort(list, mid+1, j);
+			merge(list, i, mid, j);
+		}
+		
+	}
+	
+	/**
+	 * Merge method for Merge Sort algorithm.
+	 * Your mergeSort algorithm will call this method as appropriate to do the merging.
+	 * @param list - An array of items
+	 * @param i - lower bound index
+	 * @param mid - middle index
+	 * @param j - upper bound index 
+	 */
+	public static<T extends Comparable<T>> void merge(T[] list, int i, int mid, int j) {
+		//TODO: write the body of this method
+		
+		//Reminder: when using a generic type, to create a new array to hold items of type T,
+		//  you do something like the following:
+		@SuppressWarnings("unchecked")
+		int leftArr = mid-i+1;
+		int rightArr = j-mid;
+		
+		T[] left  = (T[]) new Comparable[leftArr];
+		for(int x=0; x<leftArr; x++) {
+			left[x] = list[i+x];
+		}
+		
+		T[] right = (T[]) new Comparable[rightArr];
+		for(int x=0; x<rightArr; x++) {
+			right[x] = list[mid+x+1];
+		}
+		
+		//reinput sorted left and right arrays through comparison per individual index until one is iterated through fully
+		int countLeft = 0;
+		int countRight = 0;
+		int countMain = i;
+		
+		while(countLeft < leftArr && countRight < rightArr) {
+			if(left[countLeft].compareTo(right[countRight]) > 0) {
+				list[countMain] = right[countRight];
+				countRight++;
+			}
+			else {
+				list[countMain] = left[countLeft];
+				countLeft++;
+			}
+			countMain++;
+		}
+		
+		//input remaining values on account that one array has been fully reentered to the main list array
+		while(countRight < rightArr) {
+			list[countMain] = right[countRight];
+			countMain++;
+			countRight++;
+		}
+		while(countLeft < leftArr) {
+			list[countMain] = left[countLeft];
+			countMain++;
+			countLeft++;
+		}
+	}
+
+	
+	// ###############
+	// ## QUICKSORT ## ----------------------------------------------------------------------
+	// ###############	
+	/**
+	 * Recursive Quicksort and associated helper method.
+	 * The second method below provides the portion of the array
+	 * (i.e., index i to j inclusive) that we want to sort.
+	 * >>> Use any partition scheme that you like. 
+	 * 
+	 * @param list - An array of items
+	 */
+	public static<T extends Comparable<T>> void quickSort(T[] list) {
+		quickSort(list, 0, list.length - 1);
+	}
+	public static<T extends Comparable<T>> void quickSort(T[] list, int i, int j) {
+		//TODO: write the body of this method
+		//set partition and then divide portions of array recursively
+		//index returns value based off partition, quicksort is called upon two separate not including the index between
+		if(i<j) {
+			int index = partition(list, i, j);
+			quickSort(list, i, index-1);
+			quickSort(list, index+1, j);
+		}
+	}
+	
+	/**
+	 * Partition method for Quicksort - Use any valid partition algorithm that you like.
+	 * Your quickSort algorithm will call this method as appropriate to do the partitioning.
+	 * @param list - An array of items
+	 * @param i - lower bound
+	 * @param j - upper bound
+	 */
+	public static<T extends Comparable<T>> int partition(T[] list, int i, int j) {	
+		//TODO: write the body of this method
+		//set pivot at last element 
+		T pivot = list[j];
+		//iterator starts outside of the array, only incremented in event of an element triggering the action or when iterator reaches end of arr 
+		int iterator = i-1;
+		
+		//https://www.hackerearth.com/practice/algorithms/sorting/quick-sort/visualize/
+		//loop through index relative to pivot 
+		for(int x=i; x<=j-1; x++) {
+			
+			//swap positions corresponding with iterator upon which an element is less than the pivot element
+			if(list[x].compareTo(pivot) < 0) {
+				iterator++;
+				swap(list, iterator, x);
+			}
+		}
+		
+		//swap positions of current pivot onto location where bounds have crossed, such that left and right bounds of pivot new location are complete
+		swap(list, iterator+1,j);
+		//new index upon recursive call to stack begins where previous call ended, creating new left and right bounds with the pivot at the end
+		return iterator+1; // be sure to return the right value and not 0
+	}
+	
+	//=================================================================================
+	
+	public static void main(String[] args) {
+		// TODO:  If you wish to do your own kind of testing
+
+	}
+
+}
