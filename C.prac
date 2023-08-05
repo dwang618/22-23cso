@@ -1,0 +1,82 @@
+#include <stdio.h>
+#include <stdlib.h>
+// TODO: Write functions here
+void titlecase(char *s) {
+	char *pointer = s;				//pointer variable representing address of first index in string s
+	for(; *pointer != '\0'; pointer++) {		//for loop, running until pointer reaches end of the string
+		if(*pointer >= 'a' && *pointer <= 'z' && pointer != s && *(pointer-1) == ' ') {		//conditional; letter proceeding a space
+			*pointer = *pointer - 32;   	//capitalize letters using ASCII values, subtracting 32 from lowercase form
+		}
+	}
+}
+
+void fibarray(unsigned short *dest, unsigned num) {
+	for(int x=0; x<num; x++) {				//for loop from zero to specified user input num
+		if(x == 0 || x == 1) {				//conditional; x is at index zero or one where first two fib numbers = 1
+			*dest = 1;				//pointer at given index set to one
+		}
+		else {
+			*dest = *(dest-1) + *(dest-2);		//otherwise, current value at index equals sum of previous two values
+		}
+		dest++;						//incrememnt pointer
+	}
+}
+
+long recpow(long x, unsigned char e) {
+
+	if(e == 0) {						//exponent zero equals one
+		return 1;
+	}
+	else if(e == 1) {					//exponent one equals initial input value x
+		return x;
+	}
+	return 0 + recpow(x, e-1)*x;				//otherwise, recursively call upon the power function to multiply x by itself e times
+								//return equivalent to original input times itself, but retains original number
+}
+
+unsigned long nextprime(unsigned long x) {
+	int bool = 1;						//boolean variable to keep track of whether current number is not prime
+	if(x==0) {x++;}
+	while(bool) {						//loop dependent on bool, s.t. if number is not prime then continue
+		int divisor=2;					//int variable at two representing counter, divisor starts at two not one
+		x++;						//increment x within loop until x contains a number that is prime
+		bool = 0;					//set boolean variable to false preemptively
+		while(divisor<=x/2) {				//loop checking whether x is prime, dependent on divisor being less than x/2
+			if(x%divisor==0) {			//conditional, if x is divisible by a number that is not one then it is not prime
+				bool = 1;			//reset boolean variable to true, bc x is not prime
+			}
+			divisor++;
+		}
+	}
+	return x;
+
+}
+
+int nondup(int *arr, unsigned length) {
+	int bool = 0;								//create boolean variable, set to false to mean there is no duplicate 
+	int index1 =0;								//index1 set to 0, represents first pointer
+	int index2 =0;								//index2 set to 0, represents second pointer
+	for(; index1 < length; index1++) {					//set of nested for loops to iterate through input array
+		for(;index2 < length; index2++) {
+			if(arr[index1] == arr[index2] && index1 != index2) {
+				bool = 1;					//set boolean variable to true when a duplicate is found
+			}
+		}
+		index2=0;							//reset index2 value for every iteration of the array
+		if(!bool) {							//if no duplicate is found, return the value found at current pointer
+			return arr[index1];
+		}
+		bool=0;								//reset boolean to false and loop back
+	}
+	return arr[index1];
+}
+
+int main() {
+    	// TODO: Add tests here
+	long x = 0;
+	for(int i=0; i<10; i++) {
+		x = nextprime(x);
+		printf("%ld\n", x);
+	}
+	return 0;
+}
