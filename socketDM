@@ -1,0 +1,190 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <string.h>
+#include <poll.h>
+//instantiate array fds to use for choosing between file descriptors
+//size two to accomodate for both socket and standard input stream
+struct pollfd fds[2];
+//timeout constant value in ms, equiv to one minute
+const int timer = 60000;
+
+//predefine necessary sockets; listener
+int listener, connecter;
+
+//populate array fds with file descriptors;
+//one containing client socket, other containing input file directive
+void pollSetup() {
+	//first set fd and events fields for client socket then directive
+	//contained in 1st and 2nd indices respectively
+	fds[0].fd = connecter;
+	fds[0].events = POLLIN;
+	fds[1].fd = STDIN_FILENO;
+	fds[1].events = POLLIN;
+}
+
+//continuous loop running depending on timeout status or input error
+//valid poll function using fds array, searching for active revents
+//case a; priority on inout for STDIN_FILENO
+//case b; continue onto client socket input 
+void pollLoop() {
+	while(1) {
+		int numFileDesc = poll(fds, (int)(sizeof(fds)/ sizeof(fds[0])), timer);
+		if(numFileDesc < 0) {
+			printf("error; polling is a very good function \n");
+			break;
+		}
+		if(numFileDesc == 0) {
+			printf("time out lol \n");
+			continue;
+		}
+		if(fds[1].revents & POLLIN) {
+			//max message size is 4096 bytes
+			char text[4096];
+			int input = read(STDIN_FILENO, text, 4096);
+			if(input <=0) {
+				break;
+			}
+			write(connecter, text, input);
+		}
+
+		if(fds[0].revents & POLLIN) {
+			char text[4096];
+			int input = read(connecter, text, 4096);
+			if(input <=0) {
+				break;
+			}
+			write(STDOUT_FILENO, text, input);
+		}
+	}
+}
+
+int main(int argc, char *argv[]) {
+	//SERVER MODE ; ZERO OR ONE ARGUMENTS
+	int port;
+	char *last;
+	if(argc <= 2) {
+		//case 1 (no args); get random port and display port number
+		if(argc <= 1) {
+			srandom(getpid());
+			port = 0xc000 | (random()&0x3fff);
+		}
+		if(argc == 2) {
+			port = strtol(argv[1], &last, 10);
+		}
+		system("host $HOSTNAME");
+		printf("we straight chillin on port num %d \n", port);
+
+		//create address using any given IP, socket lab code
+		struct sockaddr_in ipOfServer;
+		memset(&ipOfServer, 0, sizeof(struct sockaddr_in));
+		ipOfServer.sin_family = AF_INET;
+		ipOfServer.sin_addr.s_addr = htonl(INADDR_ANY);
+		ipOfServer.sin_port = htons(port);
+
+		//listen for connections and create first socket
+		listener = socket(AF_INET, SOCK_STREAM, 0);
+		bind(listener, (struct sockaddr*)&ipOfServer, sizeof(ipOfServer));
+
+		//wait for a single connection, OS queue set to size ONE
+		listen(listener, 1);
+		connecter  = accept(listener, (struct sockaddr*)NULL, NULL);
+		//accept connection and disable listener socket
+		pollSetup();
+		close(listener);
+	}
+
+	//CLIENT MODE ; TWO ARGUMENTS
+	else if(argc == 3) {
+		//initialize struct sockaddr_in to hold IP and port num	
+		struct sockaddr_in server_addr;
+		int status, valread;
+		char* hello = "yo im gonna have a stroke lol";
+		char* last;
+		char buffer[1024] = {0};
+		server_addr.sin_family = AF_INET;
+
+		port = strtol(argv[2], &last, 10);
+		server_addr.sin_port = htons(port);
+		if(inet_pton(AF_INET, argv[1], &server_addr.sin_addr)<=0) {
+			printf("\n invalid address or address is not supported \n");
+			return -1;
+		}
+
+		//obtain ip from args and check for invalid socket
+		connecter = socket(AF_INET, SOCK_STREAM, 0);
+		if(listener < 0) {
+			printf("\n error in socket creation\n");
+			return -1;
+		}
+
+		//connect to given IP address and port / check for faults
+		if((status = connect(connecter, (struct sockaddr*)&server_addr, sizeof(server_addr))) < 0) {
+			printf("\nConnection failed \n");
+			return -1;
+		}
+		pollSetup();
+		//close(listener);
+
+	}
+
+	else{
+		printf("main function command line argument error");
+		//free(last);
+		close(listener);
+		return 0;
+	}
+
+	//loop until timeout or termination of either socket
+	pollLoop();
+	close(connecter);
+	return 0;
+
+
+}
+
+//populate array fds with file descriptors;
+//one containing listener socket, other containing input file directive
+//void pollSetup() {
+	//set descriptors and characterize corresponding events
+//	fds[0].fd = connecter;
+//	fds[0].events = POLLIN;
+
+//	fds[1].fd = STDIN_FILENO;
+//	fds[1].events = POLLIN;
+//}
+
+//infinite loop; use poll to choose socket or std input stream
+//set 1 minute timeout for poll
+//void pollLoop() {
+//	while(1) {
+//		int numFileDesc = poll(fds, (int)(sizeof(fds) / sizeof(fds[0])), timer);
+//		if(mFileDesc < 0) {
+//			printf("error; polling is a very good function \n");
+//			break;
+//		}
+//		if(numFileDesc == 0) {
+//			printf("timed out \n");
+//			continue;
+//		}
+//		if(fds[1].revents & POLLIN) {
+//			char text[1000];
+//			int input = read(STDIN_FILENO, text, 1000);
+//			if(input <= 0) {
+//				break;
+//			}
+//			write(connecter, text, input);
+//		}
+
+//		if(fds[0].revents & POLLIN) {
+//			char text[1000];
+//			int input = read(connecter, text, 1000);
+//			if(input <= 0) {
+//				break;
+//			}
+//			write(STDOUT_FILENO, text, input);
+//		}
+//	}
+//}
